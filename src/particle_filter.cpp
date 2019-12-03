@@ -81,6 +81,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    */
    int particle_id;
    std::default_random_engine gen;
+   if (yaw_rate < 0.001) {
+       yaw_rate = 0.001;
+   }
    for (particle_id = 0; particle_id < num_particles; particle_id++) {
         particles[particle_id].x     += velocity * (sin(particles[particle_id].theta + yaw_rate * delta_t) - sin(particles[particle_id].theta)) / yaw_rate;
         particles[particle_id].y     += velocity * (cos(particles[particle_id].theta) - cos(particles[particle_id].theta + yaw_rate * delta_t)) / yaw_rate;
@@ -130,7 +133,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    float distance, temp_dist, weight;
    int index;
    for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
-   	Particle particle = particles[particleIndex];
+   	Particle &particle = particles[particleIndex];
    	float obs_x ;
    	float obs_y;
    	particle.weight = 1;
