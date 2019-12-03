@@ -95,10 +95,10 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
         particles[particle_id].y     += (velocity * (cos(particles[particle_id].theta) - cos(particles[particle_id].theta + yaw_rate * delta_t)) / yaw_rate);
 	particles[particle_id].theta += (delta_t * yaw_rate);
         //Adding Gaussian Noise
-        /*particles[particle_id].x +=  coord_x(gen);
+        particles[particle_id].x +=  coord_x(gen);
         particles[particle_id].y +=  coord_y(gen);
         particles[particle_id].theta += coord_theta(gen); 
-   */
+   
 }
    
 }
@@ -164,6 +164,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		}
                 if (distance != -1) {
 		weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
+		weight = multiv_prob(std_landmark[0], std_landmark[1], obs_x, obs_y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
 		particle.weight *= weight;
                 } else {
 particle.weight = 0;
