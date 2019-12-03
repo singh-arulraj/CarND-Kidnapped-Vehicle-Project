@@ -85,8 +85,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    normal_distribution<double> coord_x(0.0, std_pos[0]);
    normal_distribution<double> coord_theta(0.0, std_pos[2]);
    
-   if (fabs(yaw_rate) < 0.001) {
-       yaw_rate = 0.001;
+   if (fabs(yaw_rate) < 0.0001) {
+       yaw_rate = 0.0001;
    }
    
 
@@ -136,6 +136,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    int numParticles = particles.size();
    float distance, temp_dist, weight;
    int index;
+   float sum_weights = 0;
    for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
    	Particle &particle = particles[particleIndex];
    	float obs_x ;
@@ -161,14 +162,19 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				index = j;
 			}
 		}
-                if (distance == -1) {
+                if (distance != -1) {
 		weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
 		particle.weight *= weight;
                 }
    	}
+        sum_weights += particle.weight;
         
    }
-	
+  /*
+ for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
+       particles[particleIndex].weight /= sum_weights;
+}
+*/	
 
 }
 
