@@ -136,24 +136,38 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    int numParticles = particles.size();
    float distance, temp_dist, weight;
    int index;
+   float cosine, sine;
    float sum_weights = 0;
+   float obs_x, obs_y;
+   int found = 0;
    for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
    	Particle &particle = particles[particleIndex];
-   	float obs_x ;
-   	float obs_y;
    	particle.weight = 1;
+        cosine = cos(particle.theta);
+        sine = sin(particle.theta);
+        vector<Map::single_landmark_s> InRangeLandmarks;
+        for (int i = 0; i < map_landmarks.landmark_list.size(); i++) {
+		temp_dist = dist(particle.x, particle.y, map_landmarks.landmark_list[i].x_f, map_landmarks.landmark_list[i].y_f);
+                if (temp_dist > sensor_range) {
+			continue;
+		}
+                found = 1;
+                InRangeLandmarks.push_back(map_landmarks.landmark_list[i]);
+        }
+        if (!found) {
+		particle.weight = 0;
+                continue;
+        }
         for (int i= 0; i < observations.size(); i++) {
    		//Convert Observation point to map Coordinates
-		obs_x = observations[i].x * cos(particle.theta) - observations[i].y * sin(particle.theta) + particle.x;
-   		obs_y = observations[i].x * sin(particle.theta) + observations[i].y * cos(particle.theta) + particle.y;
+                
+		obs_x = observations[i].x * cosine - observations[i].y * sine + particle.x;
+   		obs_y = observations[i].x * sine + observations[i].y * cosine + particle.y;
                 
 		//Generate the associations
                 distance = -1;       
-                for(int j = 0; j < map_landmarks.landmark_list.size(); j++) {
-			temp_dist = dist (obs_x,obs_y, map_landmarks.landmark_list[j].x_f, map_landmarks.landmark_list[j].y_f);
-			if (temp_dist > sensor_range) {
-				continue;
-			}
+                for(int j = 0; j < InRangeLandmarks.size(); j++) {
+			temp_dist = dist (obs_x,obs_y, InRangeLandmarks[j].x_f, InRangeLandmarks[j].y_f);
 			if (distance == -1) {
                             distance = temp_dist;
                             index = j;
@@ -163,14 +177,14 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			}
 		}
                 if (distance != -1) {
-		weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
-		weight = multiv_prob(std_landmark[0], std_landmark[1], obs_x, obs_y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
+		/*weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
+*/		weight = multiv_prob(std_landmark[0], std_landmark[1], obs_x, obs_y, InRangeLandmarks[index].x_f, InRangeLandmarks[index].y_f);
 		particle.weight *= weight;
-                } else {
+                } else { 
 particle.weight = 0;
 }
    	}
-        sum_weights += particle.weight;
+        //sum_weights += particle.weight;
         
    }
   /*
