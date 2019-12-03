@@ -165,7 +165,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
                 if (distance != -1) {
 		weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
 		particle.weight *= weight;
-                }
+                } else {
+particle.weight = 0;
+}
    	}
         sum_weights += particle.weight;
         
