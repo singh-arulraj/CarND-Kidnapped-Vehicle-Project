@@ -81,20 +81,26 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    */
    int particle_id;
    std::default_random_engine gen;
-   if (yaw_rate < 0.001) {
+   normal_distribution<double> coord_y(0.0, std_pos[1]);
+   normal_distribution<double> coord_x(0.0, std_pos[0]);
+   normal_distribution<double> coord_theta(0.0, std_pos[2]);
+   
+   if (fabs(yaw_rate) < 0.001) {
        yaw_rate = 0.001;
    }
+   
+
    for (particle_id = 0; particle_id < num_particles; particle_id++) {
-        particles[particle_id].x     += velocity * (sin(particles[particle_id].theta + yaw_rate * delta_t) - sin(particles[particle_id].theta)) / yaw_rate;
-        particles[particle_id].y     += velocity * (cos(particles[particle_id].theta) - cos(particles[particle_id].theta + yaw_rate * delta_t)) / yaw_rate;
-	particles[particle_id].theta += delta_t * yaw_rate;
-   }
-   normal_distribution<double> coord_x(particles[particle_id].x, std_pos[0]);
-   normal_distribution<double> coord_y(particles[particle_id].y, std_pos[1]);
-   normal_distribution<double> coord_theta(particles[particle_id].theta , std_pos[2]);
-   particles[particle_id].x = coord_x(gen);
-   particles[particle_id].y = coord_y(gen);
-   particles[particle_id].theta = coord_theta(gen); 
+        particles[particle_id].x     += (velocity * (sin(particles[particle_id].theta + yaw_rate * delta_t) - sin(particles[particle_id].theta)) / yaw_rate);
+        particles[particle_id].y     += (velocity * (cos(particles[particle_id].theta) - cos(particles[particle_id].theta + yaw_rate * delta_t)) / yaw_rate);
+	particles[particle_id].theta += (delta_t * yaw_rate);
+        //Adding Gaussian Noise
+        /*particles[particle_id].x +=  coord_x(gen);
+        particles[particle_id].y +=  coord_y(gen);
+        particles[particle_id].theta += coord_theta(gen); 
+   */
+}
+   
 }
 
 void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, 
@@ -107,8 +113,6 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-   for (int i = 0; i < observations.size(); i++) {
-   }
 
 }
 
@@ -145,7 +149,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		//Generate the associations
                 distance = -1;       
                 for(int j = 0; j < map_landmarks.landmark_list.size(); j++) {
-			temp_dist = dist (obs_x,obs_y, map_landmarks.landmark_list[i].x_f, map_landmarks.landmark_list[i].y_f);
+			temp_dist = dist (obs_x,obs_y, map_landmarks.landmark_list[j].x_f, map_landmarks.landmark_list[j].y_f);
+			if (temp_dist > sensor_range) {
+				continue;
+			}
 			if (distance == -1) {
                             distance = temp_dist;
                             index = j;
@@ -154,8 +161,10 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				index = j;
 			}
 		}
+                if (distance == -1) {
 		weight = multiv_prob(std_landmark[0], std_landmark[1], particle.x, particle.y, map_landmarks.landmark_list[index].x_f, map_landmarks.landmark_list[index].y_f);
 		particle.weight *= weight;
+                }
    	}
         
    }
@@ -186,7 +195,7 @@ void ParticleFilter::resample() {
 	for(int i=0; i<num_particles; ++i){
 
 		auto index = particle_dist(gen);
-		new_particles[i] = std::move(particles[index]);
+		new_particles[i] = particles[index];
 	}
 	particles = new_particles;
 
